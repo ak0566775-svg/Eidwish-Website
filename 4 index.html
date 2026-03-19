@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eid Mubarak, Shanzay | My Forever Moon</title>
+    <!-- Fonts: 2026 Trend - Mixing High-Contrast Serif with Minimalist Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,400&family=Plus+Jakarta+Sans:wght@200;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fdfcf8;
+            --accent: #c5a35d; /* Modern Champagne Gold */
+            --text-dark: #1a1a1a;
+            --text-light: #666;
+            --glass: rgba(255, 255, 255, 0.6);
+            --transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none; /* Custom cursor for interactivity */
+        }
+
+        body {
+            background-color: var(--bg);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: var(--text-dark);
+            overflow: hidden; /* Controlled by JS during scroll-reveal */
+            height: 100vh;
+            perspective: 1000px;
+        }
+
+        /* --- Custom Cursor --- */
+        #cursor {
+            width: 20px;
+            height: 20px;
+            border: 1px solid var(--accent);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.2s ease;
+        }
+
+        /* --- Preloader / Entry --- */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 1.5s ease;
+        }
+
+        .moon-loader {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            box-shadow: inset -15px 0px 0px 1px var(--accent);
+            animation: pulse 2s infinite ease-in-out;
+            margin-bottom: 20px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        /* --- Background Particles --- */
+        #canvas-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            opacity: 0.4;
+        }
+
+        /* --- Main Content Layout --- */
+        main {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 2rem;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: var(--transition);
+        }
+
+        main.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- Hero Section --- */
+        .hero-text {
+            text-align: center;
+            z-index: 10;
+        }
+
+        .hero-text h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(1rem, 5vw, 1.5rem);
+            letter-spacing: 0.5rem;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 1rem;
+            font-weight: 300;
+        }
+
+        .hero-text h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(3rem, 12vw, 7rem);
+            font-weight: 600;
+            font-style: italic;
+            line-height: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .name-reveal {
+            position: relative;
+            display: inline-block;
+        }
+
+        .name-reveal::after {
+            content: '';
+            position: absolute;
+            bottom: 10%;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--accent);
+            transition: width 1.5s ease 1s;
+        }
+
+        main.visible .name-reveal::after {
+            width: 100%;
+        }
+
+        /* --- Interactive Letter --- */
+        .letter-container {
+            margin-top: 3rem;
+            position: relative;
+            width: 300px;
+            height: 200px;
+            cursor: pointer;
+            transition: transform 0.5s ease;
+        }
+
+        .letter-container:hover {
+            transform: scale(1.05);
+        }
+
+        .envelope {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(197, 163, 93, 0.3);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        }
+
+        .envelope p {
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+        }
+
+        /* --- Fullscreen Overlay Message --- */
+        #message-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(253, 252, 248, 0.98);
+            z-index: 2000;
+            display: none;
+            padding: 4rem 2rem;
+            overflow-y: auto;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message-content {
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .message-content p {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .close-btn {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--accent);
+            padding-bottom: 5px;
+            cursor: pointer;
+        }
+
+        /* --- Floating Elements --- */
+        .floating-lantern {
+            position: absolute;
+            width: 40px;
+            opacity: 0.6;
+            animation: float 6s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        /* --- Audio Toggle --- */
+        .music-toggle {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            z-index: 100;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .visualizer {
+            display: flex;
+            gap: 3px;
+            height: 15px;
+            align-items: flex-end;
+        }
+
+        .bar {
+            width: 2px;
+            background: var(--accent);
+            height: 100%;
+            animation: quiet 1.2s ease-in-out infinite;
+        }
+
+        .bar:nth-child(2) { animation-delay: 0.2s; }
+        .bar:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes quiet {
+            0%, 100% { height: 5px; }
+            50% { height: 15px; }
+        }
+
+        .hidden { display: none !important; }
+
+    </style>
+</head>
+<body>
+
+    <div id="cursor"></div>
+
+    <!-- Preloader -->
+    <div id="loader" onclick="startExperience()">
+        <div class="moon-loader"></div>
+        <p style="font-size: 0.7rem; letter-spacing: 4px; color: var(--accent); text-transform: uppercase;">Click to Sight the Moon</p>
+    </div>
+
+    <!-- Background -->
+    <canvas id="canvas-bg"></canvas>
+
+    <!-- UI Elements -->
+    <div class="music-toggle">
+        <span>VIBE</span>
+        <div class="visualizer">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main id="main-content">
+        <!-- Floating Icons -->
+        <svg class="floating-lantern" style="top: 15%; left: 10%;" viewBox="0 0 30 50">
+            <path d="M15 5 L10 15 L20 15 Z M10 15 L5 35 L25 35 L20 15 Z M10 35 L15 45 L20 35" fill="none" stroke="#c5a35d" stroke-width="1"/>
+        </svg>
+        <svg class="floating-lantern" style="top: 25%; right: 15%; animation-delay: 1s;" viewBox="0 0 30 50">
+            <path d="M15 5 L10 15 L20 15 Z M10 15 L5 35 L25 35 L20 15 Z M10 35 L15 45 L20 35" fill="none" stroke="#c5a35d" stroke-width="1"/>
+        </svg>
+
+        <section class="hero-text">
+            <h2>Eid-ul-Fitr 2026</h2>
+            <h1>Eid Mubarak, <br><span class="name-reveal">Shanzay</span></h1>
+            <p style="color: var(--text-light); font-weight: 200; margin-top: 10px;">The moon has never looked as beautiful as you.</p>
+        </section>
+
+        <div class="letter-container" onclick="openLetter()">
+            <div class="envelope">
+                <p>OPEN MY HEART</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- The Personal Message Overlay -->
+    <div id="message-overlay">
+        <div class="close-btn" onclick="closeLetter()">Back</div>
+        <div class="message-content">
+            <p class="msg-line">To my dearest Shanzay,</p>
+            <p class="msg-line">In the quiet beauty of this Eid morning, my first and last thought is you.</p>
+            <p class="msg-line">2026 brings another year of joy, but no celebration is complete without the light you bring into my life.</p>
+            <p class="msg-line">May your day be as sweet as your smile and as peaceful as your soul.</p>
+            <p class="msg-line" style="font-style: italic; color: var(--accent);">Yours forever, Always.</p>
+            <div class="moon-loader" style="margin: 3rem auto; transform: scale(0.5);"></div>
+        </div>
+    </div>
+
+    <!-- Audio Element (Ambient/Soft) -->
+    <audio id="bg-music" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // Custom Cursor Logic
+        const cursor = document.getElementById('cursor');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        // Background Particles
+        const canvas = document.getElementById('canvas-bg');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function initCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+            draw() {
+                ctx.fillStyle = '#c5a35d';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+
+        initCanvas();
+        for(let i=0; i<100; i++) particles.push(new Particle());
+        animateParticles();
+
+        // Interaction Transitions
+        function startExperience() {
+            document.getElementById('loader').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loader').classList.add('hidden');
+                document.getElementById('main-content').classList.add('visible');
+                // document.getElementById('bg-music').play(); // Browsers might block auto-play
+            }, 1000);
+        }
+
+        function openLetter() {
+            const overlay = document.getElementById('message-overlay');
+            overlay.style.display = 'flex';
+            const lines = document.querySelectorAll('.msg-line');
+            lines.forEach((line, index) => {
+                setTimeout(() => {
+                    line.style.opacity = '1';
+                    line.style.transform = 'translateY(0)';
+                    line.style.transition = 'all 1s ease';
+                }, 400 * index);
+            });
+        }
+
+        function closeLetter() {
+            document.getElementById('message-overlay').style.display = 'none';
+        }
+
+        // Parallax Effect on Mouse Move
+        document.addEventListener('mousemove', (e) => {
+            const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
+            const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
+            document.querySelector('.hero-text').style.transform = `translate(${moveX}px, ${moveY}px)`;
+        });
+
+        window.addEventListener('resize', initCanvas);
+    </script>
+</body>
+</html>
